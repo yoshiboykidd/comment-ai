@@ -3,18 +3,16 @@ import pandas as pd
 from openai import OpenAI
 
 # ==========================================
-# 1. 設定：スプレッドシートIDを適用済み
+# 設定：スプレッドシートID
 # ==========================================
 SPREADSHEET_ID = "1sIr-8ys0jSapzIlt8RSei4lYIKPbFdZjm5OofizxmYM"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv"
 
-# OpenAIクライアントの初期化
 client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 # --- 画面設定 ---
 st.set_page_config(page_title="かりんと流・プロフ生成ツール", page_icon="✨", layout="centered")
 
-# デザインの微調整
 st.markdown("""
     <style>
     .main { background-color: #fffafb; }
@@ -25,35 +23,26 @@ st.markdown("""
         color: white; 
         font-weight: bold; 
         height: 3.5em;
-        border: none;
-    }
-    .stButton>button:hover {
-        background-color: #ff2a51;
-        border: none;
     }
     </style>
     """, unsafe_allow_html=True)
 
 st.title("✨ かりんと流・プロフ生成ツール")
-st.caption("スプレッドシートの知能を使い、名前を出さずに『彼女』の魅力を最大化します")
 
-# --- データの読み込み ---
 @st.cache_data(ttl=600)
 def load_data():
     try:
         data = pd.read_csv(SHEET_URL)
         return data
     except Exception as e:
-        st.error("スプレッドシートの読み込みに失敗しました。共有設定が『リンクを知っている全員』になっているか確認してください。")
+        st.error("スプレッドシートの読み込みに失敗しました。")
         return None
 
 df = load_data()
 
 if df is not None:
-    # --- サイドバー：入力フォーム ---
     with st.sidebar:
         st.header("👤 キャスト基本情報")
-        # 名前は入力しますが、AIへの命令で「本文には出さない」と封印します
         name_admin = st.text_input("キャスト名（管理用）", placeholder="例：あやか")
         age = st.number_input("年齢", min_value=18, max_value=60, value=20)
         
@@ -70,25 +59,21 @@ if df is not None:
         st.divider()
         
         st.header("🎨 キャラクター設定")
-        # 【修正】系統は現場で迷わない5つに絞り込み
-        display_types = ["清楚・癒やし", "モデル・上品", "妹・アイドル", "ギャル・小悪魔", "熟女・お姉さん"]
+        display_types = ["清楚・癒やし", "モデル・上品", "妹・アイドル", "ギャル・小悪魔", "大人・お姉さん"]
         selected_type = st.selectbox("基本系統（お手本の選択）", display_types)
         
-        # 【修正】特徴キーワードは「多いまま」で現場のこだわりを反映
         keywords = st.multiselect(
-            "特徴キーワード（複数選択）", 
+            "特徴キーワード", 
             ["清楚", "癒やし", "S感", "ギャル", "妹系", "未経験", "笑顔", "脚線美", "モデル体型", 
              "高身長", "小柄", "色白", "豊満", "スレンダー", "人妻風", "JD", "ハーフ顔", "愛嬌", 
              "しっとり", "聞き上手", "美乳", "美肌", "モチモチ肌", "おっとり", "活発"]
         )
 
-    # --- メイン処理 ---
     if st.button("かりんと流でプロフを生成する"):
         if not name_admin:
-            st.warning("キャストの名前を入力してください（管理用）")
+            st.warning("キャストの名前を入力してください")
         else:
-            with st.spinner("スプレッドシートから最適な文章を学習中..."):
-                # 1. お手本の抽出（選択された系統の文字が含まれる行を探す）
+            with st.spinner("「彼女」という芸術を執筆中..."):
                 search_word = selected_type.split('・')[0] 
                 relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
                 
@@ -99,27 +84,26 @@ if df is not None:
                     samples = df.sample(n=3)
                     sample_texts = "\n\n".join([f"--- お手本 ---\n{text}" for text in samples["かりんと流プロフ全文"]])
 
-                # 2. プロンプト（名前使用禁止・彼女統一を強化）
-                system_prompt = "貴方はメンズエステ業界の伝説的なライターです。気品、官能、期待感を完璧に調和させた文章を書きます。"
+                system_prompt = "貴方は高級メンズエステの魅力を伝える、美文の達人です。数字を情緒的に綴り、読者の想像力を掻き立てるプロフェッショナルです。"
                 
                 user_prompt = f"""
-以下のキャスト情報を元に、高級メンズエステのプロフィールを執筆してください。
-提示した「お手本」の文章スタイルを継承しつつ、以下の【鉄の掟】を必ず守ってください。
+以下のキャスト情報を元に、気品と情熱が同居するプロフィールを執筆してください。
+「お手本」の品格を保ちつつ、以下の【執筆ルール】を完璧に守ってください。
 
 ### キャスト情報
 年齢：{age}歳
-サイズ：T{height} / B{bust}({cup}) / W{waist} / H{hip}
+サイズ：身長{height}cm / B{bust}({cup}カップ) / W{waist} / H{hip}
 キーワード：{", ".join(keywords)}
 
-### かりんと流・鉄の掟（絶対遵守）
-1. 冒頭に【】で囲ったキャッチコピーを必ず「3行」作成すること。
-2. 文中にキャストの名前（{name_admin}）は「絶対に」出さないこと。
-3. キャストのことは、一貫して「彼女」と呼ぶこと。
-4. 一人称（私、僕など）は使用禁止。
-5. 二人称は「貴方」または「貴男」。
-6. 「昼」「夜」「朝」「深夜」などの時間表現は、24時間営業のため「絶対に」使わないこと。
-7. 「彼」という言葉は使わず「貴方」を使うこと。
-8. 文章の最後は、読み手の期待感を最高潮に高め、予約へと誘う最高の一文で締めること。
+### かりんと流・鉄の掟（執筆ルール）
+1. 冒頭に【】で囲った印象的なキャッチコピーを「3行」作成すること。
+2. **【サイズ表現の極意】**: 
+   「T158」「B85(D)」といった記号と数字の羅列は、機械的で色気がないため【厳禁】とする。
+   数字はあくまで「彼女の魅力」を補完する要素として、文章の中に自然に、かつ官能的に溶け込ませること。
+   （例：すらりと伸びた158cmの脚線美、たわわに実ったDカップの果実、きゅっと窄まった58cmの腰つき、など）
+3. キャスト名（{name_admin}）は絶対に出さず、一貫して「彼女」と呼ぶこと。
+4. 一人称、および時間帯（昼・夜など）を特定する言葉は使用禁止。
+5. 文章の最後は、貴方の手で扉を開けたくなるような、余韻と期待を残す一文で締めること。
 
 ### 参考にする文章スタイル（お手本）
 {sample_texts}
@@ -134,17 +118,14 @@ if df is not None:
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_prompt}
                         ],
-                        temperature=0.75
+                        temperature=0.8  # 表現の柔軟性を出すために少し上げました
                     )
                     
                     result_text = response.choices[0].message.content
 
-                    # --- 結果表示 ---
-                    st.subheader(f"✨ {name_admin} さんのプロフ案")
-                    st.text_area("コピーして使用してください", result_text, height=600)
-                    st.success("「彼女」で統一されたプロフが完成しました。")
+                    st.subheader(f"✨ 生成結果")
+                    st.text_area("そのまま使用可能です", result_text, height=600)
+                    st.success(f"「{selected_type}」系統の情緒的な文章が完成しました。")
                     
                 except Exception as e:
                     st.error(f"エラーが発生しました: {e}")
-else:
-    st.info("スプレッドシートIDを確認してください。")
