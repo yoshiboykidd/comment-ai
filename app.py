@@ -74,4 +74,56 @@ if df is not None:
             st.warning("キャストの名前を入力してください")
         else:
             with st.spinner("二面性の魅力を執筆中..."):
-                search_word =
+                search_word = selected_type.split('・')[0] 
+                relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
+                
+                if len(relevant_samples) > 0:
+                    samples = relevant_samples.sample(n=min(3, len(relevant_samples)))
+                    sample_texts = "\n\n".join([f"--- お手本 ---\n{text}" for text in samples["かりんと流プロフ全文"]])
+                else:
+                    samples = df.sample(n=3)
+                    sample_texts = "\n\n".join([f"--- お手本 ---\n{text}" for text in samples["かりんと流プロフ全文"]])
+
+                system_prompt = "貴方は最高級メンズエステの魅力を伝えるプロライターです。キャストの二面性を『ギャップ』という武器に変えて、読者を虜にする文章を書きます。"
+                
+                user_prompt = f"""
+以下のキャスト情報を元に、高級感と期待感に満ちたプロフィールを執筆してください。
+「お手本」の品格を保ちつつ、以下の【鉄の掟】を完璧に守ってください。
+
+### キャストデータ
+年齢：{age}歳
+身長：{height}cm / バスト：{bust}({cup}カップ) / ウエスト：{waist} / ヒップ：{hip}
+キーワード：{", ".join(keywords)}
+
+### かりんと流・鉄の掟（絶対遵守）
+1. **【ギャップの魔法】**: 
+   選択されたキーワードに矛盾（例：清楚とS感、妹系と人妻風など）がある場合、それを「最高の二面性」として昇華させること。単に並べるのではなく「普段は愛らしい妹のようだが、密室では大人の色香を漂わせる」といった、ギャップを感じさせる魅力的なストーリーを構築すること。
+2. **【数値の完全排除とカップ数表記】**: 
+   - 「{height}cm」「{waist}cm」などの具体的なcm数値は本文に【一切出さない】こと。その数値が意味する「魅力（小柄、すらりとした、等）」を詩的な言葉で表現すること。
+   - ただし、**カップ数（{cup}カップ、または{cup}）という記号のみ**は、具体的に本文中で使用して良い。
+3. 冒頭に【】で囲ったキャッチコピーを「3行」作成すること。
+4. キャスト名（{name_admin}）は絶対に出さず、一貫して「彼女」と呼ぶこと。
+5. 一人称、および時間帯（昼・夜など）を特定する言葉は使用禁止。
+6. 最後は、貴方の前でだけ見せる彼女の「真実の姿」を予感させるような、期待に満ちた一文で締めること。
+
+作成された文章：
+"""
+
+                try:
+                    response = client.chat.completions.create(
+                        model="gpt-4o",
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": user_prompt}
+                        ],
+                        temperature=0.8
+                    )
+                    
+                    result_text = response.choices[0].message.content
+
+                    st.subheader(f"✨ 生成結果")
+                    st.text_area("そのまま使用可能です", result_text, height=600)
+                    st.success("ギャップを活かした情緒的なプロフが完成しました！")
+                    
+                except Exception as e:
+                    st.error(f"エラーが発生しました: {e}")
