@@ -3,7 +3,7 @@ import pandas as pd
 from openai import OpenAI
 
 # ==========================================
-# 設定：スプレッドシートID
+# 設定：スプレッドシートID（適用済み）
 # ==========================================
 SPREADSHEET_ID = "1sIr-8ys0jSapzIlt8RSei4lYIKPbFdZjm5OofizxmYM"
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv"
@@ -73,56 +73,5 @@ if df is not None:
         if not name_admin:
             st.warning("キャストの名前を入力してください")
         else:
-            with st.spinner("数値を情緒的な表現に翻訳中..."):
-                search_word = selected_type.split('・')[0] 
-                relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
-                
-                if len(relevant_samples) > 0:
-                    samples = relevant_samples.sample(n=min(3, len(relevant_samples)))
-                    sample_texts = "\n\n".join([f"--- お手本 ---\n{text}" for text in samples["かりんと流プロフ全文"]])
-                else:
-                    samples = df.sample(n=3)
-                    sample_texts = "\n\n".join([f"--- お手本 ---\n{text}" for text in samples["かりんと流プロフ全文"]])
-
-                system_prompt = "貴方は最高級メンズエステのプロライターです。数値を情景へと昇華させつつ、記号としての魅力を残す達人です。"
-                
-                user_prompt = f"""
-以下のキャストデータを元に、官能的で品格のあるプロフィールを執筆してください。
-「お手本」の文章構成を継承しつつ、以下の【鉄の掟】を完璧に守ってください。
-
-### 素材となるデータ
-年齢：{age}歳
-身長：{height}cm / バスト：{bust}({cup}カップ) / ウエスト：{waist} / ヒップ：{hip}
-キーワード：{", ".join(keywords)}
-
-### かりんと流・鉄の掟（絶対遵守）
-1. **【数値の扱い（重要）】**: 
-   - 「158cm」「58cm」「85cm」などの具体的な**cm単位の数値は本文に出すことを一切禁止**とする。
-   - 代わりに、その数値が意味する「魅力」を詩的・情緒的な言葉で表現すること（例：掌に収まりそうな可憐な体躯、繊細に窄まった腰つき、等）。
-   - ただし、**カップ数（{cup}カップ、または{cup}）というアルファベット表記のみ、具体的に本文中で使用して良い**。
-2. 冒頭に【】で囲ったキャッチコピーを「3行」作成すること。
-3. キャスト名（{name_admin}）は絶対に出さず、一貫して「彼女」と呼ぶこと。
-4. 一人称、および時間帯（昼・夜など）を特定する言葉は使用禁止。
-5. 最後は、彼女との時間を心待ちにさせるような、余韻のある一文で締めること。
-
-作成された文章：
-"""
-
-                try:
-                    response = client.chat.completions.create(
-                        model="gpt-4o",
-                        messages=[
-                            {"role": "system", "content": system_prompt},
-                            {"role": "user", "content": user_prompt}
-                        ],
-                        temperature=0.8
-                    )
-                    
-                    result_text = response.choices[0].message.content
-
-                    st.subheader(f"✨ 生成結果")
-                    st.text_area("そのまま使用可能です", result_text, height=600)
-                    st.success(f"「{cup}カップ」の魅力を際立たせた文章が完成しました。")
-                    
-                except Exception as e:
-                    st.error(f"エラーが発生しました: {e}")
+            with st.spinner("二面性の魅力を執筆中..."):
+                search_word =
