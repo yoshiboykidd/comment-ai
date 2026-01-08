@@ -46,15 +46,15 @@ if df is not None:
         name_admin = st.text_input("キャスト名（管理用）", placeholder="例：あやか")
         age = st.number_input("年齢", min_value=18, max_value=60, value=20)
         
-        st.subheader("📏 サイズ")
+        st.subheader("📏 サイズ（数値はイメージ変換用）")
         c1, c2 = st.columns(2)
         with c1:
-            height = st.number_input("身長", value=158)
+            height = st.number_input("身長(cm)", value=158)
             bust = st.number_input("バスト", value=85)
         with c2:
             cup = st.selectbox("カップ", ["A", "B", "C", "D", "E", "F", "G", "H", "I"], index=3)
-            waist = st.number_input("ウエスト", value=58)
-        hip = st.number_input("ヒップ", value=85)
+            waist = st.number_input("ウエスト(cm)", value=58)
+        hip = st.number_input("ヒップ(cm)", value=85)
 
         st.divider()
         
@@ -73,7 +73,7 @@ if df is not None:
         if not name_admin:
             st.warning("キャストの名前を入力してください")
         else:
-            with st.spinner("「彼女」という芸術を執筆中..."):
+            with st.spinner("数値を情緒的な表現に翻訳中..."):
                 search_word = selected_type.split('・')[0] 
                 relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
                 
@@ -84,29 +84,26 @@ if df is not None:
                     samples = df.sample(n=3)
                     sample_texts = "\n\n".join([f"--- お手本 ---\n{text}" for text in samples["かりんと流プロフ全文"]])
 
-                system_prompt = "貴方は高級メンズエステの魅力を伝える、美文の達人です。数字を情緒的に綴り、読者の想像力を掻き立てるプロフェッショナルです。"
+                system_prompt = "貴方は最高級メンズエステのプロライターです。数値を情景へと昇華させつつ、記号としての魅力を残す達人です。"
                 
                 user_prompt = f"""
-以下のキャスト情報を元に、気品と情熱が同居するプロフィールを執筆してください。
-「お手本」の品格を保ちつつ、以下の【執筆ルール】を完璧に守ってください。
+以下のキャストデータを元に、官能的で品格のあるプロフィールを執筆してください。
+「お手本」の文章構成を継承しつつ、以下の【鉄の掟】を完璧に守ってください。
 
-### キャスト情報
+### 素材となるデータ
 年齢：{age}歳
-サイズ：身長{height}cm / B{bust}({cup}カップ) / W{waist} / H{hip}
+身長：{height}cm / バスト：{bust}({cup}カップ) / ウエスト：{waist} / ヒップ：{hip}
 キーワード：{", ".join(keywords)}
 
-### かりんと流・鉄の掟（執筆ルール）
-1. 冒頭に【】で囲った印象的なキャッチコピーを「3行」作成すること。
-2. **【サイズ表現の極意】**: 
-   「T158」「B85(D)」といった記号と数字の羅列は、機械的で色気がないため【厳禁】とする。
-   数字はあくまで「彼女の魅力」を補完する要素として、文章の中に自然に、かつ官能的に溶け込ませること。
-   （例：すらりと伸びた158cmの脚線美、たわわに実ったDカップの果実、きゅっと窄まった58cmの腰つき、など）
+### かりんと流・鉄の掟（絶対遵守）
+1. **【数値の扱い（重要）】**: 
+   - 「158cm」「58cm」「85cm」などの具体的な**cm単位の数値は本文に出すことを一切禁止**とする。
+   - 代わりに、その数値が意味する「魅力」を詩的・情緒的な言葉で表現すること（例：掌に収まりそうな可憐な体躯、繊細に窄まった腰つき、等）。
+   - ただし、**カップ数（{cup}カップ、または{cup}）というアルファベット表記のみ、具体的に本文中で使用して良い**。
+2. 冒頭に【】で囲ったキャッチコピーを「3行」作成すること。
 3. キャスト名（{name_admin}）は絶対に出さず、一貫して「彼女」と呼ぶこと。
 4. 一人称、および時間帯（昼・夜など）を特定する言葉は使用禁止。
-5. 文章の最後は、貴方の手で扉を開けたくなるような、余韻と期待を残す一文で締めること。
-
-### 参考にする文章スタイル（お手本）
-{sample_texts}
+5. 最後は、彼女との時間を心待ちにさせるような、余韻のある一文で締めること。
 
 作成された文章：
 """
@@ -118,14 +115,14 @@ if df is not None:
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_prompt}
                         ],
-                        temperature=0.8  # 表現の柔軟性を出すために少し上げました
+                        temperature=0.8
                     )
                     
                     result_text = response.choices[0].message.content
 
                     st.subheader(f"✨ 生成結果")
                     st.text_area("そのまま使用可能です", result_text, height=600)
-                    st.success(f"「{selected_type}」系統の情緒的な文章が完成しました。")
+                    st.success(f"「{cup}カップ」の魅力を際立たせた文章が完成しました。")
                     
                 except Exception as e:
                     st.error(f"エラーが発生しました: {e}")
