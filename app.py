@@ -48,7 +48,7 @@ if "password_correct" not in st.session_state:
 # 2. メインツール部分
 # ==========================================
 st.title("✨ かりんと流・プロフ生成ツール")
-st.caption("新マスタールール準拠：構成フロー最適化版")
+st.caption("現場の入力フローに最適化された最新バージョン")
 
 @st.cache_data(ttl=600)
 def load_data():
@@ -63,22 +63,16 @@ df = load_data()
 
 if df is not None:
     with st.sidebar:
-        # --- 【最優先】ベーススタイルの選択 ---
-        st.header("💎 執筆方針の決定")
-        selected_style = st.selectbox(
-            "1. 全体の雰囲気（ベーススタイル）", 
-            ["清楚・癒やし", "モデル・上品", "妹・アイドル", "ギャル・小悪魔", "大人・お姉さん"],
-            help="文章全体のトーンや品格を決定する「器」になります。"
-        )
-
-        st.divider()
-
-        # --- 基本情報 ---
+        # --- 1. 基本情報 ---
         st.header("👤 キャスト基本情報")
         name_admin = st.text_input("キャスト名", placeholder="あやか")
         age = st.number_input("年齢", min_value=18, max_value=60, value=20)
         
-        st.subheader("📏 サイズ（数値は情景に変換されます）")
+        st.divider()
+
+        # --- 2. サイズ情報 ---
+        st.header("📏 サイズ")
+        st.caption("※数値はAIが情緒的な情景描写に自動変換します")
         c1, c2 = st.columns(2)
         with c1:
             height = st.number_input("身長(cm)", value=158)
@@ -90,7 +84,18 @@ if df is not None:
 
         st.divider()
 
-        # --- キーワード選択（チェックボックス形式） ---
+        # --- 3. 執筆方針（ベーススタイル） ---
+        st.header("💎 執筆方針の決定")
+        selected_style = st.selectbox(
+            "全体の雰囲気（ベーススタイル）", 
+            ["清楚・癒やし", "モデル・上品", "妹・アイドル", "ギャル・小悪魔", "大人・お姉さん"],
+            help="文章全体のトーンや品格を決定する「器」になります。"
+        )
+
+        st.divider()
+
+        # --- 4. 特徴キーワードの選定（チェックボックス形式） ---
+        st.header("🎨 特徴キーワードの選定")
         all_selected_keywords = []
 
         def create_checkbox_grid(title, options, cols_num=2):
@@ -102,10 +107,10 @@ if df is not None:
                     selected.append(option)
             return selected
 
-        all_selected_keywords += create_checkbox_grid("2. 系統・雰囲気の味付け", ["清楚", "癒やし", "ギャル", "妹系", "JD", "人妻風", "ハーフ顔", "クール", "都会的", "未経験"])
-        all_selected_keywords += create_checkbox_grid("3. 外見チャームポイント", ["美脚", "モデル体型", "高身長", "小柄", "色白", "巨乳", "スレンダー", "美乳", "美肌", "モチモチ肌"])
-        all_selected_keywords += create_checkbox_grid("4. 性格・接客スタイル", ["笑顔", "愛嬌", "しっとり", "聞き上手", "おっとり", "活発", "一生懸命"])
-        all_selected_keywords += create_checkbox_grid("5. ギャップ・二面性", ["S感", "清楚なのに大胆", "ギャルなのに健気", "実は情熱的", "ギャップ萌え"])
+        all_selected_keywords += create_checkbox_grid("・系統・雰囲気の味付け", ["清楚", "癒やし", "ギャル", "妹系", "JD", "人妻風", "ハーフ顔", "クール", "都会的", "未経験"])
+        all_selected_keywords += create_checkbox_grid("・外見チャームポイント", ["美脚", "モデル体型", "高身長", "小柄", "色白", "巨乳", "スレンダー", "美乳", "美肌", "モチモチ肌"])
+        all_selected_keywords += create_checkbox_grid("・性格・接客スタイル", ["笑顔", "愛嬌", "しっとり", "聞き上手", "おっとり", "活発", "一生懸命"])
+        all_selected_keywords += create_checkbox_grid("・ギャップ・二面性", ["S感", "清楚なのに大胆", "ギャルなのに健気", "実は情熱的", "ギャップ萌え"])
 
         st.divider()
         st.header("📝 文章のボリューム")
@@ -135,7 +140,6 @@ if df is not None:
             st.warning("キーワードを選択してください")
         else:
             with st.spinner(f"「{selected_style}」のトーンで執筆中..."):
-                # 選択されたベーススタイルに基づいて過去データを抽出
                 search_word = selected_style.split('・')[0] 
                 relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
                 sample_texts = "\n\n".join([f"--- 執筆参考スタイル ---\n{text}" for text in relevant_samples.sample(n=min(3, len(relevant_samples)))["かりんと流プロフ全文"]]) if len(relevant_samples) > 0 else ""
@@ -153,13 +157,13 @@ if df is not None:
 指示：今回の文章は「{selected_style}」のトーン、品格、世界観をベースに構築してください。
 
 ### 【重要】文章の長さ
-指示：{target_len}程度（この分量を目指してください）
+指示：{target_len}程度
 
 ### かりんと流・新マスタールール（絶対遵守）
 1. **【人称の掟】**: 本文は「彼女」と「貴方」のみ。名前や一人称は禁止。
-2. **【世界観・時間の掟】**: 具体的な時間は排除し「ふたりきりの刻」等に置換。
+2. **【世界観・時間の掟】**: 「朝昼夜」の時間は排除し「ふたりきりの刻」等に置換。
 3. **【トーンと表現の掟】**: 比喩を用いた詩的官能。「クール」等は必ずポジティブ転換。
-4. **【構成の掟】**: ①冒頭【】3行、②第一印象、③ギャップ、④体の特徴（cm数値は出さず{cup}カップ等の記号と表現）、⑤余韻
+4. **【構成の掟】**: ①冒頭【】3行、②第一印象、③ギャップ、④体の特徴（数値は出さず{cup}カップ等の記号と情景描写）、⑤余韻
 5. **【禁止事項】**: 同一フレーズの繰り返し禁止。
 
 ### 参考スタイル
