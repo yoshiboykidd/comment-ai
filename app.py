@@ -9,13 +9,13 @@ try:
     SPREADSHEET_ID = st.secrets["SPREADSHEET_ID"]
     OPENAI_API_KEY = st.secrets["OPENAI_API_KEY"]
 except KeyError:
-    st.error("Secrets設定が見つかりません。Streamlit管理画面を確認してください。")
+    st.error("Secrets設定が見つかりません。")
     st.stop()
 
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv"
 TARGET_PASSWORD = "karin10"
 
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = OpenAI(api_key=OpenAI_API_KEY)
 
 # --- 画面設定 ---
 st.set_page_config(page_title="かりんと流・プロフ生成ツール", page_icon="✨", layout="centered")
@@ -48,7 +48,6 @@ if "password_correct" not in st.session_state:
 # 2. メインツール部分
 # ==========================================
 st.title("✨ かりんと流・プロフ生成ツール")
-st.caption("新マスタールール準拠：ベーススタイル×ギャップ戦略モデル")
 
 @st.cache_data(ttl=600)
 def load_data():
@@ -72,7 +71,6 @@ if df is not None:
 
         # --- 2. サイズ情報 ---
         st.header("📏 サイズ")
-        st.caption("※数値はAIが情緒的な描写に自動変換します")
         c1, c2 = st.columns(2)
         with c1:
             height = st.number_input("身長(cm)", value=158)
@@ -88,12 +86,7 @@ if df is not None:
         st.header("💎 執筆方針の決定")
         selected_style = st.selectbox(
             "全体の雰囲気（ベーススタイル）", 
-            [
-                "清楚・可憐", "妖艶・色香", "親近感・ナチュラル", 
-                "都会的・洗練", "天真爛漫・愛嬌", "慈愛・包容力", 
-                "知的・ミステリアス", "和風・しとやか"
-            ],
-            help="文章全体のトーンや品格を決定する「器」になります。"
+            ["清楚・可憐", "妖艶・色香", "親近感・ナチュラル", "都会的・洗練", "天真爛漫・愛嬌", "慈愛・包容力", "知的・ミステリアス", "和風・しとやか"]
         )
 
         st.divider()
@@ -101,7 +94,6 @@ if df is not None:
         # --- 4. 特徴キーワードの選定 ---
         st.header("🎨 特徴キーワードの選定")
         all_selected_keywords = []
-
         def create_checkbox_grid(title, options, cols_num=2):
             st.subheader(title)
             selected = []
@@ -111,25 +103,16 @@ if df is not None:
                     selected.append(option)
             return selected
 
-        all_selected_keywords += create_checkbox_grid("・系統・雰囲気の味付け", ["清楚", "癒やし", "ギャル", "妹系", "JD", "人妻風", "ハーフ顔", "都会的", "未経験"])
-        all_selected_keywords += create_checkbox_grid("・外見チャームポイント", ["美脚", "モデル体型", "高身長", "小柄", "色白", "巨乳", "スレンダー", "美乳", "美肌", "モチモチ肌"])
-        all_selected_keywords += create_checkbox_grid("・性格・接客スタイル", ["笑顔", "愛嬌", "しっとり", "聞き上手", "おっとり", "活発", "一生懸命", "クール"])
-        all_selected_keywords += create_checkbox_grid("・ギャップ・二面性", ["S感", "清楚なのに大胆", "ギャルなのに健気", "実は情熱的", "ギャップ萌え"])
+        all_selected_keywords += create_checkbox_grid("・系統・味付け", ["清楚", "癒やし", "ギャル", "妹系", "JD", "人妻風", "ハーフ顔", "都会的", "未経験"])
+        all_selected_keywords += create_checkbox_grid("・外見特徴", ["美脚", "モデル体型", "高身長", "小柄", "色白", "巨乳", "スレンダー", "美乳", "美肌", "モチモチ肌"])
+        all_selected_keywords += create_checkbox_grid("・性格・接客", ["笑顔", "愛嬌", "しっとり", "聞き上手", "おっとり", "活発", "一生懸命", "クール"])
+        # 【更新】「エッチ好き」を追加
+        all_selected_keywords += create_checkbox_grid("・ギャップ", ["S感", "清楚なのに大胆", "ギャルなのに健気", "実は情熱的", "ギャップ萌え", "エッチ好き"])
 
         st.divider()
         st.header("📝 文章のボリューム")
-        length_preset = st.radio(
-            "文字数目安",
-            ["標準（400文字）", "短め（200文字）", "長め（800文字）", "数値指定"],
-            index=0
-        )
-        
-        target_len = ""
-        if length_preset == "数値指定":
-            custom_num = st.number_input("希望文字数", min_value=50, max_value=2000, value=300, step=50)
-            target_len = f"約{custom_num}文字"
-        else:
-            target_len = length_preset
+        length_preset = st.radio("文字数目安", ["標準（400文字）", "短め（200文字）", "長め（800文字）", "数値指定"], index=0)
+        target_len = f"約{st.number_input('希望文字数', 50, 2000, 300) if length_preset == '数値指定' else length_preset}"
 
         st.divider()
         if st.button("ログアウト"):
@@ -143,36 +126,31 @@ if df is not None:
         elif not all_selected_keywords:
             st.warning("キーワードを選択してください")
         else:
-            with st.spinner(f"「{selected_style}」のトーンでギャップを魔法に変えています..."):
-                # お手本抽出
-                search_word = selected_style.split('・')[0] if '・' in selected_style else selected_style.split('-')[0]
+            with st.spinner("キャッチコピーと官能の物語を執筆中..."):
+                search_word = selected_style.split('・')[0] if '・' in selected_style else selected_style
                 relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
-                sample_texts = "\n\n".join([f"--- 参考スタイル ---\n{text}" for text in relevant_samples.sample(n=min(3, len(relevant_samples)))["かりんと流プロフ全文"]]) if len(relevant_samples) > 0 else ""
+                sample_texts = "\n\n".join([f"--- 参考 ---\n{text}" for text in relevant_samples.sample(n=min(3, len(relevant_samples)))["かりんと流プロフ全文"]]) if len(relevant_samples) > 0 else ""
 
-                system_prompt = "あなたは高級手コキオナクラ専門の伝説的ライターです。数値を情景へと昇華させ、読者の想像力を掻き立てる詩的な文章を綴ります。"
+                system_prompt = "あなたは高級オナクラのプロライターです。構成案を遵守し、読者の脳裏に情景が浮かぶ詩的で官能的な文章を綴ります。"
                 
                 user_prompt = f"""
 以下のデータを元に、新マスタールールを厳守してプロフィールを執筆してください。
 
 ### 素材データ
-名前：{name_admin} / 身長：{height}cm / バスト：{bust}({cup}カップ) / ウエスト：{waist} / ヒップ：{hip}
-選択された要素：{", ".join(all_selected_keywords)}
+名前：{name_admin} / ベーススタイル：{selected_style}
+キーワード：{", ".join(all_selected_keywords)}
+身体：{cup}カップ / {target_len}程度
 
-### 【重要】執筆の器（ベーススタイル）
-指示：今回の文章は「{selected_style}」のトーン、品格、世界観をベースに構築してください。
+### 【構成の掟：絶対厳守】
+1. **冒頭に必ず【】で囲ったキャッチコピーを「3行」作成すること。**
+   （例：【パワーワード】\n【パワーワード】\n【パワーワード】）
+2. 次に本文を開始し、「第一印象」→「ギャップ（特に{", ".join(all_selected_keywords)}に関連する二面性）」→「身体描写」→「余韻」の順で構成すること。
 
-### 【重要】戦略的ギャップ
-指示：もしベーススタイルとキーワードに矛盾（例：清楚スタイル×S感キーワードなど）がある場合、それを「貴方だけに見せる特別な二面性」として魅力的にストーリー化してください。
-
-### 【重要】文章の長さ
-指示：{target_len}程度
-
-### かりんと流・新マスタールール（絶対遵守）
-1. **【人称の掟】**: 本文は「彼女」と「貴方」のみ。名前や一人称は禁止。
-2. **【世界観・時間の掟】**: 「朝昼夜」の時間は排除し「ふたりきりの刻」等に置換。
-3. **【トーンと表現の掟】**: 比喩を用いた詩的官能。「クール」等は必ずポジティブ転換（内側に秘めた温度感など）。
-4. **【構成の掟】**: ①冒頭【】3行、②第一印象、③ギャップ、④体の特徴（cm数値は出さず{cup}カップ等の記号と表現）、⑤余韻
-5. **【禁止事項】**: 同一フレーズの繰り返し禁止。
+### 【かりんと流・鉄の掟】
+- 主語は「彼女」、お客様は「貴方」で固定。名前や一人称は使用禁止。
+- 数値（cm）は出さず、詩的な表現に変換（例：掌に余る{cup}カップの果実、等）。
+- 「朝昼夜」の時間は排除し「ふたりきりの刻」等に置換。
+- 「クール」や「エッチ好き」等の要素は、品格を保ちつつ官能的な「ギャップの魅力」として昇華させること。
 
 作成された文章：
 """
