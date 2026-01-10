@@ -15,7 +15,7 @@ except KeyError:
 SHEET_URL = f"https://docs.google.com/spreadsheets/d/{SPREADSHEET_ID}/export?format=csv"
 TARGET_PASSWORD = "karin10"
 
-client = OpenAI(api_key=OpenAI_API_KEY)
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 # --- 画面設定 ---
 st.set_page_config(page_title="かりんと流・プロフ生成ツール", page_icon="✨", layout="centered")
@@ -106,8 +106,8 @@ if df is not None:
         all_selected_keywords += create_checkbox_grid("・系統・味付け", ["清楚", "癒やし", "ギャル", "妹系", "JD", "人妻風", "ハーフ顔", "都会的", "未経験"])
         all_selected_keywords += create_checkbox_grid("・外見特徴", ["美脚", "モデル体型", "高身長", "小柄", "色白", "巨乳", "スレンダー", "美乳", "美肌", "モチモチ肌"])
         all_selected_keywords += create_checkbox_grid("・性格・接客", ["笑顔", "愛嬌", "しっとり", "聞き上手", "おっとり", "活発", "一生懸命", "クール"])
-        # 【更新】「エッチ好き」を追加
-        all_selected_keywords += create_checkbox_grid("・ギャップ", ["S感", "清楚なのに大胆", "ギャルなのに健気", "実は情熱的", "ギャップ萌え", "エッチ好き"])
+        # 【更新】「責め好き」を追加
+        all_selected_keywords += create_checkbox_grid("・ギャップ", ["S感", "清楚なのに大胆", "ギャルなのに健気", "実は情熱的", "ギャップ萌え", "エッチ好き", "責め好き"])
 
         st.divider()
         st.header("📝 文章のボリューム")
@@ -126,12 +126,12 @@ if df is not None:
         elif not all_selected_keywords:
             st.warning("キーワードを選択してください")
         else:
-            with st.spinner("キャッチコピーと官能の物語を執筆中..."):
+            with st.spinner("キャッチコピーと物語を執筆中..."):
                 search_word = selected_style.split('・')[0] if '・' in selected_style else selected_style
                 relevant_samples = df[df["系統"].str.contains(search_word, na=False)]
                 sample_texts = "\n\n".join([f"--- 参考 ---\n{text}" for text in relevant_samples.sample(n=min(3, len(relevant_samples)))["かりんと流プロフ全文"]]) if len(relevant_samples) > 0 else ""
 
-                system_prompt = "あなたは高級オナクラのプロライターです。構成案を遵守し、読者の脳裏に情景が浮かぶ詩的で官能的な文章を綴ります。"
+                system_prompt = "あなたは高級メンズエステのプロライターです。構成を遵守し、読者の想像力を最高潮に高める詩的で官能的な文章を綴ります。"
                 
                 user_prompt = f"""
 以下のデータを元に、新マスタールールを厳守してプロフィールを執筆してください。
@@ -139,18 +139,17 @@ if df is not None:
 ### 素材データ
 名前：{name_admin} / ベーススタイル：{selected_style}
 キーワード：{", ".join(all_selected_keywords)}
-身体：{cup}カップ / {target_len}程度
+身体：{cup}カップ / 指定文字数：{target_len}
 
-### 【構成の掟：絶対厳守】
+### 【構成の掟：絶対に省略禁止】
 1. **冒頭に必ず【】で囲ったキャッチコピーを「3行」作成すること。**
-   （例：【パワーワード】\n【パワーワード】\n【パワーワード】）
-2. 次に本文を開始し、「第一印象」→「ギャップ（特に{", ".join(all_selected_keywords)}に関連する二面性）」→「身体描写」→「余韻」の順で構成すること。
+2. 次に本文を開始し、「第一印象」→「ギャップ」→「身体描写」→「余韻」の順で構成すること。
 
 ### 【かりんと流・鉄の掟】
-- 主語は「彼女」、お客様は「貴方」で固定。名前や一人称は使用禁止。
-- 数値（cm）は出さず、詩的な表現に変換（例：掌に余る{cup}カップの果実、等）。
-- 「朝昼夜」の時間は排除し「ふたりきりの刻」等に置換。
-- 「クール」や「エッチ好き」等の要素は、品格を保ちつつ官能的な「ギャップの魅力」として昇華させること。
+- 主語は「彼女」、お客様は「貴方」で固定。
+- 数値（cm）は出さず、詩的な表現に変換（例：掌に余る{cup}カップの果実）。
+- 具体的な時間は排除し「ふたりきりの刻」等に置換。
+- 「責め好き」という要素は、品格を保ちつつ「攻めの奉仕による官能的なギャップ」として昇華させること。
 
 作成された文章：
 """
