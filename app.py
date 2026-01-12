@@ -65,7 +65,7 @@ def find_best_samples(df, selected_style, selected_keywords):
 
 # --- メイン画面 ---
 if check_password():
-    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.6", layout="centered")
+    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.7", layout="centered")
     
     try:
         conn = get_db_connection()
@@ -74,39 +74,47 @@ if check_password():
         st.error("スプレッドシート接続エラー。")
         st.stop()
 
-    st.title("✨ かりんと流・プロフ生成 ver 3.6")
-    st.caption("官能の深度を高め、本能の最深部を揺さぶる最新版")
+    # ツールタイトルの修正
+    st.title("✨ かりんと流・プロフ生成")
+    st.caption(f"DB同期済み: {len(db_df)}名の傑作データを参照中")
 
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
 
     st.divider()
-    st.header("1. キャスト基本情報")
+    
+    # 見出しサイズの縮小（###を使用）
+    st.markdown("### 1. キャスト基本情報")
     col_name, col_style = st.columns(2)
-    with col_name: cast_name = st.text_input("キャスト名（管理用）", placeholder="あやか")
-    with col_style: base_style = st.selectbox("ベースとなる系統", STYLES)
+    with col_name: 
+        cast_name = st.text_input("キャスト名（管理用）", placeholder="あやか")
+    with col_style: 
+        base_style = st.selectbox("ベースとなる系統", STYLES)
 
-    st.subheader("スペック詳細")
+    st.markdown("#### スペック詳細")
+    # ±ボタンを使いやすくするため step=1 を明示
     c1, c2, c3, c4, c5, c6 = st.columns(6)
-    with c1: age = st.number_input("年齢", 18, 60, 22)
-    with c2: height = st.number_input("身長", 130, 200, 158)
-    with c3: bust = st.number_input("バスト", 70, 130, 85)
+    with c1: age = st.number_input("年齢", 18, 60, 22, step=1)
+    with c2: height = st.number_input("身長", 130, 200, 158, step=1)
+    with c3: bust = st.number_input("バスト", 70, 130, 85, step=1)
     with c4: cup = st.selectbox("カップ", ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"], index=3)
-    with c5: waist = st.number_input("ウエスト", 40, 120, 58)
-    with c6: hip = st.number_input("ヒップ", 70, 130, 86)
+    with c5: waist = st.number_input("ウエスト", 40, 120, 58, step=1)
+    with c6: hip = st.number_input("ヒップ", 70, 130, 86, step=1)
     full_spec = f"（{age}）T:{height} B:{bust}({cup}) W:{waist} H:{hip}"
 
     st.divider()
-    st.header("2. 特徴タグの選択")
+    st.markdown("### 2. 特徴タグの選択")
     all_selected_keywords = []
+    
     def create_checkbox_grid(label, options, key_prefix):
-        st.subheader(label)
+        st.markdown(f"**{label}**")
         cols = st.columns(4)
         selected = []
         for i, option in enumerate(options):
             if cols[i % 4].checkbox(option, key=f"{key_prefix}_{option}"):
                 selected.append(option)
         return selected
+
     all_selected_keywords += create_checkbox_grid("●タイプ", TYPES, "type")
     all_selected_keywords += create_checkbox_grid("●ルックス", LOOKS, "look")
     all_selected_keywords += create_checkbox_grid("●性格", PERSONALITY, "pers")
@@ -114,10 +122,11 @@ if check_password():
 
     st.divider()
 
-    st.header("3. 執筆設定")
+    st.markdown("### 3. 執筆設定")
     target_length = st.slider("おおよその文字数", min_value=300, max_value=1000, value=400, step=50)
 
-    if st.button("✨ 彼女の真価を書き下ろす", type="primary", use_container_width=True):
+    # 執筆ボタン
+    if st.button("✨ 彼女の魅力を書き下ろす", type="primary", use_container_width=True):
         if not cast_name or not all_selected_keywords:
             st.error("入力を完成させてください。")
         else:
@@ -130,30 +139,23 @@ if check_password():
             else:
                 api_key = st.secrets.get("OPENAI_API_KEY")
 
-            # --- 官能ブースト型プロンプト（ver 3.6） ---
             system_prompt = f"""
 あなたは adult entertainment 専門の伝説的ライター「かりんと」です。
 読者の理性を焼き払い、抗えない本能の昂ぶりを引き起こす「究極の官能」を書き下ろしてください。
 
 【執筆の絶対ルール】
 1. 文字数：全体のボリュームは【おおよそ {target_length} 文字程度】。
-2. 人称：キャストは「彼女」、読者は「貴方」。主語（彼女は等）を極限まで削り、情景と動作が直接読者の脳に流れ込むように綴りなさい。
+2. 人称：キャストは「彼女」、読者は「貴方」。主語（彼女は等）を極限まで削り、情緒的なリズムを作りなさい。
 3. 名前出し禁止：キャスト名は絶対に出さない。
-4. 数字の封印：スペックの数字は本文に書かない。ただし「Dカップ」等のカップ数のみ、視覚的な記号として許可。
+4. 数字の封印：スペックの数字は本文に書かない。カップ数のみ許可。
 5. 時間の抹消：特定の時間帯を連想させる言葉を排除し、永遠に続く二人だけの密室を描写しなさい。
 6. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
-7. 美学：質感、温度、匂い、衣擦れの音、耳元の吐息。単なる美しさではなく、手が届きそうな距離にある「濡れた温度感」を優先しなさい。
-8. 究極の使命：読者の性的想像力を限界まで爆発させ、言葉の熱だけでその身体に実質的な反応を引き起こすこと。直接的表現に頼らず、衣服の隙間、肌の火照り、潤んだ眼差し、指先の彷徨いなど、官能的な細部を執筆することで、脳内での「実体験」を強制させなさい。
-
-【憑依すべき傑作サンプル】
-{samples}
-
-【キャスト情報】
-スペック：{full_spec} / 特徴：{", ".join(all_selected_keywords)}
+7. 美学：質感、温度、匂い、音。手が届きそうな距離にある「濡れた温度感」を優先しなさい。
+8. 究極の使命：読者の性的想像力を限界まで爆発させ、言葉の熱だけでその身体に実質的な反応を引き起こすこと。
 """
             try:
                 client = openai.OpenAI(api_key=api_key)
-                with st.spinner("彼女の熱を帯びた吐息を言葉に変えています..."):
+                with st.spinner("熱を帯びた言葉を紡いでいます..."):
                     response = client.chat.completions.create(
                         model="gpt-4-turbo-preview",
                         messages=[{"role": "system", "content": system_prompt}],
@@ -165,7 +167,7 @@ if check_password():
 
     if st.session_state.result_text:
         st.divider()
-        st.header("4. 完成原稿の編集・DB登録")
+        st.markdown("### 4. 完成原稿の編集・DB登録")
         current_len = len(st.session_state.result_text)
         st.caption(f"現在の文字数: {current_len} 文字")
         
@@ -185,4 +187,4 @@ if check_password():
         st.session_state["authenticated"] = False
         st.rerun()
 
-    st.caption("© かりんと流・プロフ生成ツール ver 3.6 / Sensual Boost Mode")
+    st.caption("© かりんと流・プロフ生成 ver 3.7")
