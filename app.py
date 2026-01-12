@@ -26,22 +26,20 @@ def check_password():
         return False
     return True
 
-# --- 3. スプレッドシート連携機能 ---
+# --- 3. スプレッドシート連携 ---
 def get_db_connection():
     return st.connection("gsheets", type=GSheetsConnection)
 
 def load_data(conn):
-    # スプレッドシートを読み込む（1分間キャッシュ）
     df = conn.read(ttl="1m")
-    df = df.dropna(how="all") # 空行を除去
-    df.columns = df.columns.str.strip() # 列名の余白除去
+    df = df.dropna(how="all")
+    df.columns = df.columns.str.strip()
     return df
 
 def append_to_sheet(conn, df, new_row):
-    # 既存データに新しい行を加えて更新
     updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     conn.update(data=updated_df)
-    st.success("Googleスプレッドシートをリアルタイム更新しました！")
+    st.success("Googleスプレッドシートに傑作を追加しました！")
 
 # --- 4. お手本検索ロジック ---
 def find_best_samples(df, selected_style, selected_keywords):
@@ -68,18 +66,17 @@ def find_best_samples(df, selected_style, selected_keywords):
 
 # --- メイン画面 ---
 if check_password():
-    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.0", layout="centered")
+    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.1", layout="centered")
     
-    # スプレッドシート接続
     try:
         conn = get_db_connection()
         db_df = load_data(conn)
     except Exception as e:
-        st.error(f"スプレッドシートへの接続に失敗しました。Secretsの設定を確認してください。")
+        st.error("スプレッドシート接続エラー。Secretsを確認してください。")
         st.stop()
 
-    st.title("✨ かりんと流・プロフ生成 ver 3.0")
-    st.caption(f"現在、データベースには {len(db_df)} 名の傑作が同期されています。")
+    st.title("✨ かりんと流・プロフ生成 ver 3.1")
+    st.caption(f"最高品質の執筆ルールとスプレッドシートDBを統合")
 
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
@@ -87,7 +84,7 @@ if check_password():
     st.divider()
     st.header("1. キャスト基本情報")
     col_name, col_style = st.columns(2)
-    with col_name: cast_name = st.text_input("キャスト名（管理用）")
+    with col_name: cast_name = st.text_input("キャスト名（管理用）", placeholder="例：あやか")
     with col_style: base_style = st.selectbox("ベースとなる系統", STYLES)
 
     st.subheader("スペック詳細")
@@ -124,22 +121,41 @@ if check_password():
             st.error("入力を完成させてください。")
         else:
             samples = find_best_samples(db_df, base_style, all_selected_keywords)
+            
+            # OpenAI APIキーの取得（どちらの形式でも対応）
+            if "openai" in st.secrets and "api_key" in st.secrets["openai"]:
+                api_key = st.secrets["openai"]["api_key"]
+            elif "OPENAI_API_KEY" in st.secrets:
+                api_key = st.secrets["OPENAI_API_KEY"]
+            else:
+                st.error("SecretsにAPIキーが見つかりません。")
+                st.stop()
+
+            # --- 執筆プロンプト（ver 2.1 の最強版を復刻） ---
             system_prompt = f"""
 あなたは日本人女性専門のカリスマライター「かりんと」です。
-提供されたデータベースにある「過去の傑作」の文体・リズムを完璧に継承し、新しいキャストのプロフィールを執筆してください。
+提供されたデータベースにある「過去の傑作」の文体・リズム・美意識を完璧に継承し、新しいキャストのプロフィールを執筆してください。
 
 【絶対ルール：かりんと流・執筆憲法】
 1. ターゲット：全て日本人男性。
-2. 人称の徹底：キャストのことは必ず「彼女」と呼び、本文中にキャストの名前は絶対に出さない。読者は「貴方」。
-3. 数字の直接表現禁止：本文中で年齢、身長、スリーサイズなどの数字を直接書かない（カップ数のみ許可）。
-4. 時間帯示唆の完全排除：昼、夜、深夜、ランチ、太陽、月など、特定の時間帯を連想させる表現は一切禁止。
-5. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
-6. 美学：質感・温度・匂い・情景で魅力を伝える。
+2. 人称の徹底：キャストのことは必ず「彼女」と呼び、本文中にキャストの名前は絶対に出さないでください。読者は「貴方」と呼ぶこと。
+3. 数字の直接表現禁止：本文中で年齢、身長、スリーサイズなどの数字を直接書かないでください（例：「160cm」「22歳」はNG）。
+   ただし、「Dカップ」「Fカップ」といったカップ数のみ、魅力の象徴として記載を許可します。
+4. 時間帯示唆の完全排除：昼、夜、深夜、ランチ、仕事帰り、太陽、月など、特定の時間帯や外の明るさを連想させる表現は一切禁止。24時間いつでも、その瞬間が日常から切り離された「二人だけの非日常」に感じられるように執筆すること。
+5. 構成：冒頭に【 】で囲んだキャッチコピーを3行。その後に叙情的な本文。
+6. 美学：生々しい表現は避け、質感・温度・匂い・情景で魅力を伝えること。
+7. ポジティブ変換：いかなる属性も、唯一無二の魅力や官能的な質感としてポジティブに昇華させること。
+
+【参照すべき過去の傑作（お手本）】
+{samples}
+
+【今回執筆するキャストの情報】
+スペック：{full_spec}
+特徴：{", ".join(all_selected_keywords)}
 """
             try:
-                # SecretsからAPIキーを取得
-                client = openai.OpenAI(api_key=st.secrets["openai"]["api_key"])
-                with st.spinner("スプレッドシートから最適な過去作を分析中..."):
+                client = openai.OpenAI(api_key=api_key)
+                with st.spinner("スプレッドシートの傑作から『リズム』を読み取っています..."):
                     response = client.chat.completions.create(
                         model="gpt-4-turbo-preview",
                         messages=[{"role": "system", "content": system_prompt}],
@@ -147,9 +163,9 @@ if check_password():
                     )
                     st.session_state.result_text = response.choices[0].message.content.replace("\\n", "\n")
             except Exception as e:
-                st.error("OpenAI APIエラーが発生しました。")
+                st.error(f"OpenAI APIエラーが発生しました。")
 
-    # 結果表示・編集・スプレッドシート登録
+    # 結果表示・編集・登録
     if st.session_state.result_text:
         st.divider()
         st.header("3. 完成原稿の編集・DB登録")
@@ -169,4 +185,4 @@ if check_password():
         st.session_state["authenticated"] = False
         st.rerun()
 
-    st.caption("© かりんと流・プロフ生成ツール ver 3.0 / スプレッドシート完全同期型")
+    st.caption("© かりんと流・プロフ生成ツール ver 3.1 / スプレッドシートDB連携中")
