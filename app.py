@@ -65,7 +65,7 @@ def find_best_samples(df, selected_style, selected_keywords):
 
 # --- メイン画面 ---
 if check_password():
-    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.7", layout="centered")
+    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.8", layout="centered")
     
     try:
         conn = get_db_connection()
@@ -74,16 +74,15 @@ if check_password():
         st.error("スプレッドシート接続エラー。")
         st.stop()
 
-    # ツールタイトルの修正
-    st.title("✨ かりんと流・プロフ生成")
-    st.caption(f"DB同期済み: {len(db_df)}名の傑作データを参照中")
+    # タイトルにバージョンを表示
+    st.title("✨ かりんと流・プロフ生成 ver 3.8")
+    st.caption(f"DB同期済み: {len(db_df)}名のデータを参照中")
 
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
 
     st.divider()
     
-    # 見出しサイズの縮小（###を使用）
     st.markdown("### 1. キャスト基本情報")
     col_name, col_style = st.columns(2)
     with col_name: 
@@ -92,14 +91,17 @@ if check_password():
         base_style = st.selectbox("ベースとなる系統", STYLES)
 
     st.markdown("#### スペック詳細")
-    # ±ボタンを使いやすくするため step=1 を明示
-    c1, c2, c3, c4, c5, c6 = st.columns(6)
-    with c1: age = st.number_input("年齢", 18, 60, 22, step=1)
-    with c2: height = st.number_input("身長", 130, 200, 158, step=1)
-    with c3: bust = st.number_input("バスト", 70, 130, 85, step=1)
-    with c4: cup = st.selectbox("カップ", ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"], index=3)
-    with c5: waist = st.number_input("ウエスト", 40, 120, 58, step=1)
-    with c6: hip = st.number_input("ヒップ", 70, 130, 86, step=1)
+    # 3カラムに広げることでボタン(±)を確実に出現させる
+    s_col1, s_col2, s_col3 = st.columns(3)
+    with s_col1: age = st.number_input("年齢", 18, 60, 22, step=1)
+    with s_col2: height = st.number_input("身長", 130, 200, 158, step=1)
+    with s_col3: cup = st.selectbox("カップ", ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K"], index=3)
+    
+    s_col4, s_col5, s_col6 = st.columns(3)
+    with s_col4: bust = st.number_input("バスト", 70, 130, 85, step=1)
+    with s_col5: waist = st.number_input("ウエスト", 40, 120, 58, step=1)
+    with s_col6: hip = st.number_input("ヒップ", 70, 130, 86, step=1)
+    
     full_spec = f"（{age}）T:{height} B:{bust}({cup}) W:{waist} H:{hip}"
 
     st.divider()
@@ -187,4 +189,4 @@ if check_password():
         st.session_state["authenticated"] = False
         st.rerun()
 
-    st.caption("© かりんと流・プロフ生成 ver 3.7")
+    st.caption("© かりんと流・プロフ生成 ver 3.8")
