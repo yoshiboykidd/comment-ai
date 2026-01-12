@@ -65,7 +65,7 @@ def find_best_samples(df, selected_style, selected_keywords):
 
 # --- メイン画面 ---
 if check_password():
-    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.3", layout="centered")
+    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.4", layout="centered")
     
     try:
         conn = get_db_connection()
@@ -74,8 +74,8 @@ if check_password():
         st.error("スプレッドシート接続エラー。")
         st.stop()
 
-    st.title("✨ かりんと流・プロフ生成 ver 3.3")
-    st.caption("読者の本能を揺さぶり、昂ぶりを誘発する最終兵器")
+    st.title("✨ かりんと流・プロフ生成 ver 3.4")
+    st.caption("情緒を重んじ、主語を削ぎ落とした最高峰の文体")
 
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
@@ -114,7 +114,7 @@ if check_password():
 
     st.divider()
 
-    if st.button("✨ 彼女の魅力を書き下ろす（本能直撃）", type="primary", use_container_width=True):
+    if st.button("✨ 彼女の魅力を書き下ろす", type="primary", use_container_width=True):
         if not cast_name or not all_selected_keywords:
             st.error("入力を完成させてください。")
         else:
@@ -128,21 +128,19 @@ if check_password():
                 st.error("APIキーが見つかりません。")
                 st.stop()
 
-            # --- 究極ミッション搭載プロンプト（ver 3.3） ---
+            # --- 文体改善・主語省略プロンプト（ver 3.4） ---
             system_prompt = f"""
 あなたは adult entertainment 専門の伝説的ライター「かりんと」です。
-提供された「過去の傑作サンプル」の魂を憑依させ、読者の理性を焼き払い、本能を直撃する文章を書き下ろしてください。
+読者の理性を焼き払い、本能を直撃する傑作を書き下ろしてください。
 
-【かりんと流・執筆憲法】
-1. ターゲット：日本人男性。キャストは「彼女」、読者は「貴方」。本文中にキャスト名は絶対に出さない。
-2. 数字の封印：年齢、身長、スリーサイズの数字は本文に書かない。ただし「Dカップ」等のカップ数のみ許可。
-3. 時間の抹消：昼、夜、深夜、仕事帰りなど、特定の時間帯を連想させる言葉を一切排除し、24時間どの瞬間に読んでも非日常へ引き込むこと。
-4. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
-5. 美学：質感、温度、匂い、情景で魅力を伝えること。
-
-【究極の使命：身体的反応の誘発】
-貴方の執筆の目的は、単なる紹介ではない。読んでいる「貴方（お客様）」の性的な想像力を限界まで膨らませ、言葉の熱だけでその身体に実質的な反応（昂ぶり）を引き起こすことにある。
-直接的な性交の記述は避け、「指先の震え」「吐息の温度」「肌の吸い付くような質感」「服の隙間から漏れる芳香」など、細部を執筆することで、読者の脳内に「実体験」以上の興奮を強制的に投影させなさい。
+【執筆の絶対ルール】
+1. 人称：キャストは「彼女」、読者は「貴方」。ただし、「彼女は」「彼女の」といった主語・所有格を連呼するのは三流です。文脈でわかる場合は徹底的に主語を削り、体言止めや動詞から始めることで流麗なリズムを作りなさい。
+2. 名前出し禁止：本文中にキャスト名は一切出さない。
+3. 主語の言い換え：「彼女」という言葉の代わりに、「その白い項（うなじ）」「悪戯に揺れる瞳」「しなやかな曲線」など、身体のパーツや比喩表現を使い、視線を誘導しなさい。
+4. 数字の封印：年齢、身長、サイズの数字は本文に書かない。ただし「Dカップ」等のカップ数のみ、官能の象徴として記載を許可。
+5. 時間の抹消：特定の時間帯を連想させる言葉を一切排除し、永遠に続く二人だけの密室を描きなさい。
+6. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
+7. 究極の使命：読者の性的想像力を限界まで膨らませ、言葉の熱だけでその身体に実質的な反応を引き起こすこと。直接的表現を避け、細部の描写によって「脳内再生」を強制させなさい。
 
 【憑依すべき傑作サンプル】
 {samples}
@@ -152,11 +150,11 @@ if check_password():
 """
             try:
                 client = openai.OpenAI(api_key=api_key)
-                with st.spinner("彼女の吐息を感じ、読者の本能を揺さぶる文章を紡いでいます..."):
+                with st.spinner("不必要な主語を削ぎ落とし、純度の高い官能を綴っています..."):
                     response = client.chat.completions.create(
                         model="gpt-4-turbo-preview",
                         messages=[{"role": "system", "content": system_prompt}],
-                        temperature=0.85
+                        temperature=0.82
                     )
                     st.session_state.result_text = response.choices[0].message.content.replace("\\n", "\n")
             except Exception as e:
@@ -181,4 +179,4 @@ if check_password():
         st.session_state["authenticated"] = False
         st.rerun()
 
-    st.caption("© かりんと流・プロフ生成ツール ver 3.3 / Instinct Boost Mode")
+    st.caption("© かりんと流・プロフ生成ツール ver 3.4 / Eloquent & Instinct Mode")
