@@ -43,14 +43,12 @@ def find_best_samples(df, selected_style, selected_keywords):
     if df is None or df.empty:
         return "※お手本なしで執筆します。"
     
-    # 全体の雰囲気 列で絞り込み
     col_name = "全体の雰囲気" if "全体の雰囲気" in df.columns else df.columns[0]
     filtered_df = df[df[col_name] == selected_style]
     
     if filtered_df.empty:
         filtered_df = df
     
-    # 特徴キーワード 列でスコアリング
     def score_row(row):
         kw_col = "特徴キーワード" if "特徴キーワード" in df.columns else df.columns[1]
         db_kws = str(row[kw_col]).replace(" ", "").split(",")
@@ -71,7 +69,6 @@ if check_password():
     st.set_page_config(page_title="かりんと流・プロフ生成 ver 2.0", layout="centered")
     st.title("✨ かりんと流・プロフ生成ツール ver 2.0")
 
-    # セッション状態の初期化
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
 
@@ -79,7 +76,7 @@ if check_password():
     st.header("1. キャスト基本情報")
     col_name, col_style = st.columns(2)
     with col_name:
-        cast_name = st.text_input("キャスト名", placeholder="例：あやか")
+        cast_name = st.text_input("キャスト名（管理用）", placeholder="例：あやか")
     with col_style:
         base_style = st.selectbox("ベースとなる系統", STYLES)
 
@@ -93,7 +90,7 @@ if check_password():
     with c6: hip = st.number_input("ヒップ", min_value=70, max_value=130, value=86)
 
     full_spec = f"（{age}）T:{height} B:{bust}({cup}) W:{waist} H:{hip}"
-    st.info(f"生成用スペック： {full_spec}")
+    st.info(f"参照用スペック： {full_spec}")
 
     st.divider()
     st.header("2. 特徴タグの選択")
@@ -115,7 +112,6 @@ if check_password():
 
     st.divider()
 
-    # 生成ボタン
     if st.button("✨ かりんと流で執筆を開始する", type="primary", use_container_width=True):
         if not cast_name or not all_selected_keywords:
             st.error("入力が不足しています。")
@@ -123,24 +119,25 @@ if check_password():
             db = load_database()
             samples = find_best_samples(db, base_style, all_selected_keywords)
             
+            # --- かりんと流・執筆プロンプト（最新ルール適用） ---
             system_prompt = f"""
 あなたは日本人女性専門のカリスマライター「かりんと」です。
 提供されたデータベースにある「過去の傑作」の文体・リズム・美意識を完璧に継承し、新しいキャストのプロフィールを執筆してください。
 
 【絶対ルール：かりんと流・執筆憲法】
 1. ターゲット：全て日本人男性。
-2. 人称：キャストは「彼女」、読者は「貴方」と呼ぶこと。
-3. 時間帯示唆の完全排除：昼、夜、深夜、ランチ、太陽、月など、特定の時間帯や明るさを連想させる表現は一切禁止。24時間いつでも「非日常空間」であるように執筆すること。
-4. 時間の表記：「時」または「刻」は自由。
-5. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
-6. 美学：生々しい直接的表現は避け、質感・温度・匂い・情景で官能を表現すること。
+2. 人称の徹底：キャストのことは必ず「彼女」と呼び、本文中にキャストの名前は絶対に出さないでください。読者は「貴方」と呼ぶこと。
+3. 数字の直接表現禁止：本文中で年齢、身長、スリーサイズなどの数字を直接書かないでください（例：「160cm」「22歳」はNG）。
+   ただし、「Dカップ」「Fカップ」といったカップ数のみ、魅力の象徴として記載を許可します。
+4. 時間帯示唆の完全排除：昼、夜、深夜、ランチ、仕事帰り、太陽、月など、特定の時間帯や外の明るさを連想させる表現は一切禁止。24時間いつでも「非日常空間」であるように執筆すること。
+5. 構成：冒頭に【 】で囲んだキャッチコピーを3行。その後に叙情的な本文。
+6. 美学：生々しい表現は避け、質感・温度・匂い・情景で魅力を伝えること。
 7. ポジティブ変換：いかなる属性も魅力として昇華させること。
 
 【参照お手本】
 {samples}
 
 【今回執筆するキャストの情報】
-名前：{cast_name}
 スペック：{full_spec}
 特徴：{", ".join(all_selected_keywords)}
 """
@@ -152,26 +149,20 @@ if check_password():
                         messages=[{"role": "system", "content": system_prompt}],
                         temperature=0.75
                     )
-                    # \nを実際の改行に置換してセッションに保存
                     st.session_state.result_text = response.choices[0].message.content.replace("\\n", "\n")
             except Exception as e:
                 st.error("APIエラーが発生しました。")
 
-    # 4. 結果表示・編集エリア
     if st.session_state.result_text:
         st.divider()
         st.header("3. 完成原稿の確認・編集")
-        st.caption("以下のボックス内で直接文章を修正できます。")
-        
-        # 編集可能なテキストエリア
         edited_text = st.text_area(
-            label="完成原稿（修正してそのままコピー可能です）",
+            label="完成原稿（直接編集可能です）",
             value=st.session_state.result_text,
             height=500,
             label_visibility="collapsed"
         )
         
-        # 修正されたテキストで保存ボタン
         st.download_button(
             label="修正した内容でテキストを保存",
             data=edited_text,
