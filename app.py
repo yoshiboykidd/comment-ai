@@ -39,7 +39,7 @@ def load_data(conn):
 def append_to_sheet(conn, df, new_row):
     updated_df = pd.concat([df, pd.DataFrame([new_row])], ignore_index=True)
     conn.update(data=updated_df)
-    st.success("スプレッドシートに傑作を追加しました！")
+    st.success("スプレッドシートに新たな傑作を刻みました。")
 
 # --- 4. お手本検索ロジック ---
 def find_best_samples(df, selected_style, selected_keywords):
@@ -65,7 +65,7 @@ def find_best_samples(df, selected_style, selected_keywords):
 
 # --- メイン画面 ---
 if check_password():
-    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.2", layout="centered")
+    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.3", layout="centered")
     
     try:
         conn = get_db_connection()
@@ -74,8 +74,8 @@ if check_password():
         st.error("スプレッドシート接続エラー。")
         st.stop()
 
-    st.title("✨ かりんと流・プロフ生成 ver 3.2")
-    st.caption("文体再現アルゴリズム・ブースト版")
+    st.title("✨ かりんと流・プロフ生成 ver 3.3")
+    st.caption("読者の本能を揺さぶり、昂ぶりを誘発する最終兵器")
 
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
@@ -114,7 +114,7 @@ if check_password():
 
     st.divider()
 
-    if st.button("✨ かりんと流で執筆を開始する", type="primary", use_container_width=True):
+    if st.button("✨ 彼女の魅力を書き下ろす（本能直撃）", type="primary", use_container_width=True):
         if not cast_name or not all_selected_keywords:
             st.error("入力を完成させてください。")
         else:
@@ -128,45 +128,44 @@ if check_password():
                 st.error("APIキーが見つかりません。")
                 st.stop()
 
-            # --- 憑依型・高解像度プロンプト（ver 3.2） ---
+            # --- 究極ミッション搭載プロンプト（ver 3.3） ---
             system_prompt = f"""
 あなたは adult entertainment 専門の伝説的ライター「かりんと」です。
-提供された「過去の傑作サンプル」の魂を完全に自分へ憑依させ、その文体・リズム・語彙・「濡れた温度感」を完璧に再現して、新しいキャストのプロフィールを書き下ろしてください。
-
-【執筆の手順】
-1. まず、提供された「傑作サンプル」を熟読し、その独特の言い回し、リズム（改行のタイミング）、そして男性を陶酔させる叙情的な表現を分析してください。
-2. サンプルの「魂」を引き継ぎつつ、今回のキャスト情報に基づいた全く新しい傑作を生み出してください。
+提供された「過去の傑作サンプル」の魂を憑依させ、読者の理性を焼き払い、本能を直撃する文章を書き下ろしてください。
 
 【かりんと流・執筆憲法】
 1. ターゲット：日本人男性。キャストは「彼女」、読者は「貴方」。本文中にキャスト名は絶対に出さない。
-2. 禁忌：年齢、身長、スリーサイズ等の数字の直接表現は厳禁。ただし「Dカップ」等のカップ数のみ、官能の象徴として記載を許可。
-3. 時間の抹消：昼、夜、深夜、太陽、月など、特定の時間帯を連想させる言葉を一切排除し、24時間どの瞬間に読んでも「非日常」に引き込まれる描写をすること。
-4. 構成：冒頭に【 】キャッチコピー3行（リズム重視）。その後に、五感（質感、温度、匂い、情景）に訴える叙情的な本文。
-5. 美学：生々しい表現は避け、品格のある官能を追求すること。
+2. 数字の封印：年齢、身長、スリーサイズの数字は本文に書かない。ただし「Dカップ」等のカップ数のみ許可。
+3. 時間の抹消：昼、夜、深夜、仕事帰りなど、特定の時間帯を連想させる言葉を一切排除し、24時間どの瞬間に読んでも非日常へ引き込むこと。
+4. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
+5. 美学：質感、温度、匂い、情景で魅力を伝えること。
+
+【究極の使命：身体的反応の誘発】
+貴方の執筆の目的は、単なる紹介ではない。読んでいる「貴方（お客様）」の性的な想像力を限界まで膨らませ、言葉の熱だけでその身体に実質的な反応（昂ぶり）を引き起こすことにある。
+直接的な性交の記述は避け、「指先の震え」「吐息の温度」「肌の吸い付くような質感」「服の隙間から漏れる芳香」など、細部を執筆することで、読者の脳内に「実体験」以上の興奮を強制的に投影させなさい。
 
 【憑依すべき傑作サンプル】
 {samples}
 
-【今回執筆するキャストの情報】
-スペック：{full_spec}
-特徴：{", ".join(all_selected_keywords)}
+【キャスト情報】
+スペック：{full_spec} / 特徴：{", ".join(all_selected_keywords)}
 """
             try:
                 client = openai.OpenAI(api_key=api_key)
-                with st.spinner("サンプルの魂を分析し、最適なリズムで書き下ろしています..."):
+                with st.spinner("彼女の吐息を感じ、読者の本能を揺さぶる文章を紡いでいます..."):
                     response = client.chat.completions.create(
                         model="gpt-4-turbo-preview",
                         messages=[{"role": "system", "content": system_prompt}],
-                        temperature=0.85 # 情緒的なゆらぎのために少し高めに設定
+                        temperature=0.85
                     )
                     st.session_state.result_text = response.choices[0].message.content.replace("\\n", "\n")
             except Exception as e:
-                st.error(f"APIエラーが発生しました。")
+                st.error("APIエラーが発生しました。")
 
     if st.session_state.result_text:
         st.divider()
         st.header("3. 完成原稿の編集・DB登録")
-        edited_text = st.text_area("完成原稿（直接編集可能）", value=st.session_state.result_text, height=500)
+        edited_text = st.text_area("完成原稿（直接編集可能）", value=st.session_state.result_text, height=550)
         
         if st.button("📥 この内容をスプレッドシートに傑作として登録する", use_container_width=True):
             new_row = {
@@ -182,4 +181,4 @@ if check_password():
         st.session_state["authenticated"] = False
         st.rerun()
 
-    st.caption("© かりんと流・プロフ生成ツール ver 3.2 / 執筆魂・ブースト版")
+    st.caption("© かりんと流・プロフ生成ツール ver 3.3 / Instinct Boost Mode")
