@@ -65,7 +65,7 @@ def find_best_samples(df, selected_style, selected_keywords):
 
 # --- メイン画面 ---
 if check_password():
-    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.4", layout="centered")
+    st.set_page_config(page_title="かりんと流・プロフ生成 ver 3.5", layout="centered")
     
     try:
         conn = get_db_connection()
@@ -74,8 +74,8 @@ if check_password():
         st.error("スプレッドシート接続エラー。")
         st.stop()
 
-    st.title("✨ かりんと流・プロフ生成 ver 3.4")
-    st.caption("情緒を重んじ、主語を削ぎ落とした最高峰の文体")
+    st.title("✨ かりんと流・プロフ生成 ver 3.5")
+    st.caption("情緒を重んじ、指定された長さで最高密度の官能を綴る")
 
     if "result_text" not in st.session_state:
         st.session_state.result_text = ""
@@ -114,6 +114,11 @@ if check_password():
 
     st.divider()
 
+    # 文字数指定スライダーを追加
+    st.header("3. 執筆設定")
+    target_length = st.slider("おおよその文字数（デフォルト400字）", min_value=300, max_value=1000, value=400, step=50)
+
+    # 執筆ボタン
     if st.button("✨ 彼女の魅力を書き下ろす", type="primary", use_container_width=True):
         if not cast_name or not all_selected_keywords:
             st.error("入力を完成させてください。")
@@ -128,19 +133,20 @@ if check_password():
                 st.error("APIキーが見つかりません。")
                 st.stop()
 
-            # --- 文体改善・主語省略プロンプト（ver 3.4） ---
+            # --- プロンプト（文字数指示を追加） ---
             system_prompt = f"""
 あなたは adult entertainment 専門の伝説的ライター「かりんと」です。
 読者の理性を焼き払い、本能を直撃する傑作を書き下ろしてください。
 
 【執筆の絶対ルール】
-1. 人称：キャストは「彼女」、読者は「貴方」。ただし、「彼女は」「彼女の」といった主語・所有格を連呼するのは三流です。文脈でわかる場合は徹底的に主語を削り、体言止めや動詞から始めることで流麗なリズムを作りなさい。
-2. 名前出し禁止：本文中にキャスト名は一切出さない。
-3. 主語の言い換え：「彼女」という言葉の代わりに、「その白い項（うなじ）」「悪戯に揺れる瞳」「しなやかな曲線」など、身体のパーツや比喩表現を使い、視線を誘導しなさい。
-4. 数字の封印：年齢、身長、サイズの数字は本文に書かない。ただし「Dカップ」等のカップ数のみ、官能の象徴として記載を許可。
-5. 時間の抹消：特定の時間帯を連想させる言葉を一切排除し、永遠に続く二人だけの密室を描きなさい。
-6. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
-7. 究極の使命：読者の性的想像力を限界まで膨らませ、言葉の熱だけでその身体に実質的な反応を引き起こすこと。直接的表現を避け、細部の描写によって「脳内再生」を強制させなさい。
+1. 文字数：全体のボリュームは【おおよそ {target_length} 文字程度】で構成しなさい。この長さに合わせ、物語の密度や情景描写の細かさを調整すること。
+2. 人称：キャストは「彼女」、読者は「貴方」。文脈でわかる場合は徹底的に主語を削り、体言止めや動詞から始めることで流麗なリズムを作りなさい。
+3. 名前出し禁止：本文中にキャスト名は一切出さない。
+4. 主語の言い換え：「彼女」という言葉を連呼せず、身体のパーツや比喩表現で視線を誘導しなさい。
+5. 数字の封印：年齢、身長、サイズの数字は本文に書かない。ただし「Dカップ」等のカップ数のみ許可。
+6. 時間の抹消：特定の時間帯を連想させる言葉を一切排除し、永遠に続く二人だけの密室を描きなさい。
+7. 構成：冒頭に【 】キャッチコピー3行。その後に叙情的な本文。
+8. 究極の使命：読者の性的想像力を限界まで膨らませ、言葉の熱だけで実質的な昂ぶりを引き起こすこと。直接的表現を避け、細部（質感、温度、匂い）の描写によって脳内再生を強制させなさい。
 
 【憑依すべき傑作サンプル】
 {samples}
@@ -150,7 +156,7 @@ if check_password():
 """
             try:
                 client = openai.OpenAI(api_key=api_key)
-                with st.spinner("不必要な主語を削ぎ落とし、純度の高い官能を綴っています..."):
+                with st.spinner(f"約 {target_length} 文字に想いを凝縮して執筆しています..."):
                     response = client.chat.completions.create(
                         model="gpt-4-turbo-preview",
                         messages=[{"role": "system", "content": system_prompt}],
@@ -162,7 +168,11 @@ if check_password():
 
     if st.session_state.result_text:
         st.divider()
-        st.header("3. 完成原稿の編集・DB登録")
+        st.header("4. 完成原稿の編集・DB登録")
+        # 生成された文字数を確認用に表示
+        current_len = len(st.session_state.result_text)
+        st.caption(f"現在の文字数: {current_len} 文字")
+        
         edited_text = st.text_area("完成原稿（直接編集可能）", value=st.session_state.result_text, height=550)
         
         if st.button("📥 この内容をスプレッドシートに傑作として登録する", use_container_width=True):
@@ -179,4 +189,4 @@ if check_password():
         st.session_state["authenticated"] = False
         st.rerun()
 
-    st.caption("© かりんと流・プロフ生成ツール ver 3.4 / Eloquent & Instinct Mode")
+    st.caption("© かりんと流・プロフ生成ツール ver 3.5 / Precision Length Control")
